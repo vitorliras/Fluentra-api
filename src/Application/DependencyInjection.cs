@@ -1,4 +1,6 @@
 using Fluentra.Application.Abstractions;
+using Fluentra.Application.Executors;
+using Fluentra.Application.Pipelines;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Scrutor;
@@ -16,6 +18,11 @@ public static class DependencyInjection
             .WithScopedLifetime());
 
         services.AddValidatorsFromAssemblyContaining<IUseCase<object, object>>();
+
+        // Registro manual — não seguem convenção de nome/interface 1:1 previsível pelo
+        // Scrutor (ver technology/backend/dotnet/dependency-injection.md).
+        services.AddScoped<UseCaseExecutor>();
+        services.AddScoped(typeof(ValidationPipeline<,>));
 
         return services;
     }
