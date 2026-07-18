@@ -1,0 +1,25 @@
+## .NET build artifacts
+bin/
+obj/
+out/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.user
+*.suo
+
+## Test results
+[Tt]est[Rr]esult*/
+*.trx
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Governança local do framework (ADRs, specs) — fica só neste computador, nunca versionado
+.claude/
+
+## Local configuration / secrets (never versioned — see Cross-Cutting: Segurança)
+appsettings.*.local.json
+*.env

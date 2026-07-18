@@ -1,0 +1,42 @@
+root = true
+
+[*.cs]
+csharp_style_namespace_declarations = file_scoped:error
+
+# Types: PascalCase
+dotnet_naming_rule.types_pascal_case.severity = error
+dotnet_naming_rule.types_pascal_case.symbols = types
+dotnet_naming_rule.types_pascal_case.style = pascal_case_style
+dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum, delegate
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+# Interfaces: PascalCase with leading I
+dotnet_naming_rule.interfaces_prefix_i.severity = error
+dotnet_naming_rule.interfaces_prefix_i.symbols = interfaces
+dotnet_naming_rule.interfaces_prefix_i.style = interface_style
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_style.interface_style.capitalization = pascal_case
+dotnet_naming_style.interface_style.required_prefix = I
+
+# Public/protected members: PascalCase
+dotnet_naming_rule.members_pascal_case.severity = error
+dotnet_naming_rule.members_pascal_case.symbols = public_members
+dotnet_naming_rule.members_pascal_case.style = pascal_case_style
+dotnet_naming_symbols.public_members.applicable_kinds = method, property, event
+dotnet_naming_symbols.public_members.applicable_accessibilities = public, internal, protected, protected_internal
+
+# Private fields: _camelCase
+dotnet_naming_rule.private_fields_underscore_camel_case.severity = error
+dotnet_naming_rule.private_fields_underscore_camel_case.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore_camel_case.style = underscore_camel_case_style
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel_case_style.capitalization = camel_case
+dotnet_naming_style.underscore_camel_case_style.required_prefix = _
+
+# Parameters and locals: camelCase
+dotnet_naming_rule.parameters_camel_case.severity = error
+dotnet_naming_rule.parameters_camel_case.symbols = parameters_locals
+dotnet_naming_rule.parameters_camel_case.style = camel_case_style
+dotnet_naming_symbols.parameters_locals.applicable_kinds = parameter, local
+dotnet_naming_style.camel_case_style.capitalization = camel_case
