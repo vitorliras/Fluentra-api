@@ -3,9 +3,6 @@ using Fluentra.Domain.ValueObjects.Shadowing;
 
 namespace Fluentra.Domain.Entities.Shadowing;
 
-// Agregado raiz do módulo Shadowing — Scene só é acessada/mutada através
-// daqui (ver AddScene), nunca diretamente de fora. Representa um vídeo do
-// YouTube já importado e segmentado em cenas para prática de fala.
 public sealed class Video
 {
     private readonly List<Scene> _scenes = [];
@@ -34,8 +31,6 @@ public sealed class Video
         LikeCount = likeCount;
     }
 
-    // A ordem é sempre atribuída aqui, pela Raiz — nunca informada de fora —
-    // para garantir que a sequência de cenas nunca fique inconsistente.
     public void AddScene(string text, SceneTiming timing)
     {
         var sequenceOrder = _scenes.Count + 1;

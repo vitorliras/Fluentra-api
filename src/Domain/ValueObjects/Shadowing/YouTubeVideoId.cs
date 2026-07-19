@@ -3,8 +3,6 @@ using Fluentra.Domain.Exceptions;
 
 namespace Fluentra.Domain.ValueObjects.Shadowing;
 
-// Identificador de vídeo do YouTube — sempre 11 caracteres, do alfabeto
-// [A-Za-z0-9_-], formato estável e documentado pela própria plataforma.
 public sealed partial record YouTubeVideoId
 {
     private const int Length = 11;

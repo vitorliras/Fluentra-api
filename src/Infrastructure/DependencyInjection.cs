@@ -1,5 +1,6 @@
 using Fluentra.Application.Abstractions;
 using Fluentra.Application.Configuration;
+using Fluentra.Infrastructure.ExternalServices.Shadowing;
 using Fluentra.Infrastructure.Persistence;
 using Fluentra.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,13 @@ public static class DependencyInjection
         services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
+
+        services.Configure<YouTubeSettings>(configuration.GetSection("YouTube"));
+        services.AddHttpClient<IVideoSearchProvider, YouTubeVideoSearchProvider>(client =>
+        {
+            client.BaseAddress = new Uri(configuration["YouTube:BaseUrl"] ?? "https://www.googleapis.com/youtube/v3/");
+        });
+        services.AddScoped<IYouTubeQuotaTracker, YouTubeQuotaTracker>();
 
         services.Scan(scan => scan
             .FromAssemblyOf<AppDbContext>()
