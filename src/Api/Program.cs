@@ -33,12 +33,19 @@ builder.Services
         };
     });
 
+const string CorsPolicyName = "Frontend";
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+
 builder.Services.AddAuthorization();
 builder.Services.AddLocalization();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddRateLimiter(options => { });
-builder.Services.AddCors(options => { });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicyName, policy =>
+        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod());
+});
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
@@ -48,7 +55,7 @@ app.UseSerilogRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRequestLocalization();
-app.UseCors();
+app.UseCors(CorsPolicyName);
 app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
