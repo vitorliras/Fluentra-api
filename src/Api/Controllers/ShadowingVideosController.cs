@@ -1,3 +1,4 @@
+using Fluentra.Application.DTOs.Shadowing.VideoImport;
 using Fluentra.Application.DTOs.Shadowing.VideoSearch;
 using Fluentra.Application.Executors;
 using Fluentra.Application.Pipelines;
@@ -15,15 +16,18 @@ public sealed class ShadowingVideosController : ControllerBase
     private readonly UseCaseExecutor _executor;
     private readonly SearchVideosUseCase _searchVideos;
     private readonly GetVideoByUrlUseCase _getVideoByUrl;
+    private readonly ImportVideoUseCase _importVideo;
 
     public ShadowingVideosController(
         UseCaseExecutor executor,
         SearchVideosUseCase searchVideos,
-        GetVideoByUrlUseCase getVideoByUrl)
+        GetVideoByUrlUseCase getVideoByUrl,
+        ImportVideoUseCase importVideo)
     {
         _executor = executor;
         _searchVideos = searchVideos;
         _getVideoByUrl = getVideoByUrl;
+        _importVideo = importVideo;
     }
 
     [HttpPost("search")]
@@ -44,6 +48,18 @@ public sealed class ShadowingVideosController : ControllerBase
         [FromServices] ValidationPipeline<GetVideoByUrlRequest, VideoSearchResultItem> pipeline)
     {
         var result = await _executor.ExecuteAsync(request, _getVideoByUrl, pipeline);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : BadRequest(result.Error);
+    }
+
+    [HttpPost("import")]
+    public async Task<IActionResult> Import(
+        ImportVideoRequest request,
+        [FromServices] ValidationPipeline<ImportVideoRequest, ImportVideoResponse> pipeline)
+    {
+        var result = await _executor.ExecuteAsync(request, _importVideo, pipeline);
 
         return result.IsSuccess
             ? Ok(result.Value)

@@ -30,6 +30,7 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(configuration["YouTube:BaseUrl"] ?? "https://www.googleapis.com/youtube/v3/");
         });
         services.AddScoped<IYouTubeQuotaTracker, YouTubeQuotaTracker>();
+        services.AddScoped<IVideoTranscriptProvider, YoutubeExplodeTranscriptProvider>();
 
         services.Scan(scan => scan
             .FromAssemblyOf<AppDbContext>()
