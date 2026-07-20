@@ -32,6 +32,9 @@ public static class DependencyInjection
         services.AddScoped<IYouTubeQuotaTracker, YouTubeQuotaTracker>();
         services.AddScoped<IVideoTranscriptProvider, YoutubeExplodeTranscriptProvider>();
 
+        services.Configure<WhisperSettings>(configuration.GetSection("Whisper"));
+        services.AddSingleton<ISpeechTranscriber, WhisperSpeechTranscriber>();
+
         services.Scan(scan => scan
             .FromAssemblyOf<AppDbContext>()
             .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Repository")))

@@ -23,3 +23,6 @@ Thumbs.db
 ## Local configuration / secrets (never versioned — see Cross-Cutting: Segurança)
 appsettings.*.local.json
 *.env
+
+## Modelo local do Whisper (baixado automaticamente no primeiro uso, ~150MB)
+src/Api/Models/
