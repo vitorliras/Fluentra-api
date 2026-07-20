@@ -14,13 +14,16 @@ public sealed class ShadowingVideosController : ControllerBase
 {
     private readonly UseCaseExecutor _executor;
     private readonly SearchVideosUseCase _searchVideos;
+    private readonly GetVideoByUrlUseCase _getVideoByUrl;
 
     public ShadowingVideosController(
         UseCaseExecutor executor,
-        SearchVideosUseCase searchVideos)
+        SearchVideosUseCase searchVideos,
+        GetVideoByUrlUseCase getVideoByUrl)
     {
         _executor = executor;
         _searchVideos = searchVideos;
+        _getVideoByUrl = getVideoByUrl;
     }
 
     [HttpPost("search")]
@@ -29,6 +32,18 @@ public sealed class ShadowingVideosController : ControllerBase
         [FromServices] ValidationPipeline<SearchVideosRequest, SearchVideosResponse> pipeline)
     {
         var result = await _executor.ExecuteAsync(request, _searchVideos, pipeline);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : BadRequest(result.Error);
+    }
+
+    [HttpPost("by-url")]
+    public async Task<IActionResult> GetByUrl(
+        GetVideoByUrlRequest request,
+        [FromServices] ValidationPipeline<GetVideoByUrlRequest, VideoSearchResultItem> pipeline)
+    {
+        var result = await _executor.ExecuteAsync(request, _getVideoByUrl, pipeline);
 
         return result.IsSuccess
             ? Ok(result.Value)

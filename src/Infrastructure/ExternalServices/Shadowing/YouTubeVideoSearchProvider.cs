@@ -44,6 +44,17 @@ public sealed class YouTubeVideoSearchProvider : IVideoSearchProvider
         return (detailsResponse?.Items ?? []).Select(ToVideoCandidate).ToList();
     }
 
+    public async Task<VideoCandidate?> GetByIdAsync(string youTubeVideoId, CancellationToken cancellationToken = default)
+    {
+        var detailsUrl = $"videos?part=snippet,contentDetails,statistics" +
+                          $"&id={Uri.EscapeDataString(youTubeVideoId)}&key={_settings.ApiKey}";
+
+        var detailsResponse = await _httpClient.GetFromJsonAsync<YouTubeVideosResponse>(detailsUrl, cancellationToken);
+        var item = detailsResponse?.Items?.FirstOrDefault();
+
+        return item is null ? null : ToVideoCandidate(item);
+    }
+
     private static VideoCandidate ToVideoCandidate(YouTubeVideoItem item)
     {
         return new VideoCandidate(
