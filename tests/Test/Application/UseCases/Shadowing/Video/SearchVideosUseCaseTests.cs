@@ -26,7 +26,7 @@ public sealed class SearchVideosUseCaseTests
         long likeCount = 2_500,
         bool hasCaptions = true,
         string language = "en") =>
-        new(id, "Some Video", duration ?? TimeSpan.FromMinutes(10), viewCount, likeCount, hasCaptions, language);
+        new(id, "Some Video", "https://example.com/thumb.jpg", duration ?? TimeSpan.FromMinutes(10), viewCount, likeCount, hasCaptions, language);
 
     [Fact]
     public async Task Should_Return_Failure_When_Quota_Is_Exhausted()

@@ -63,8 +63,10 @@ public sealed class SearchVideosUseCase : IUseCase<SearchVideosRequest, SearchVi
             .Select(x => new VideoSearchResultItem(
                 x.Candidate.YouTubeVideoId,
                 x.Candidate.Title,
+                x.Candidate.ThumbnailUrl,
                 x.Candidate.Duration,
                 x.Candidate.ViewCount,
+                x.Candidate.LikeCount,
                 x.Tier))
             .ToList();
 

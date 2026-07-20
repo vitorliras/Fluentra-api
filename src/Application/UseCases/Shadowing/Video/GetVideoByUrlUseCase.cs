@@ -58,7 +58,8 @@ public sealed partial class GetVideoByUrlUseCase : IUseCase<GetVideoByUrlRequest
         var tier = ClassifyPopularity(candidate.ViewCount);
 
         return Result<VideoSearchResultItem>.Success(new VideoSearchResultItem(
-            candidate.YouTubeVideoId, candidate.Title, candidate.Duration, candidate.ViewCount, tier));
+            candidate.YouTubeVideoId, candidate.Title, candidate.ThumbnailUrl, candidate.Duration,
+            candidate.ViewCount, candidate.LikeCount, tier));
     }
 
     private static string ExtractVideoId(string url)

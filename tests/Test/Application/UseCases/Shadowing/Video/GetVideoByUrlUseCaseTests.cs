@@ -18,7 +18,7 @@ public sealed class GetVideoByUrlUseCaseTests
         new(_videoSearchProvider.Object, _quotaTracker.Object, Options.Create(new YouTubeSettings()));
 
     private static VideoCandidate Candidate(long viewCount = 50_000) =>
-        new("dQw4w9WgXcQ", "Some Video", TimeSpan.FromMinutes(5), viewCount, 1_000, true, "en");
+        new("dQw4w9WgXcQ", "Some Video", "https://example.com/thumb.jpg", TimeSpan.FromMinutes(5), viewCount, 1_000, true, "en");
 
     [Fact]
     public async Task Should_Return_Failure_When_Url_Has_No_Valid_Video_Id()
@@ -92,7 +92,7 @@ public sealed class GetVideoByUrlUseCaseTests
         _quotaTracker.Setup(x => x.TryConsumeAsync(It.IsAny<int>(), default))
             .ReturnsAsync(new YouTubeQuotaConsumptionResult(true, false));
         _videoSearchProvider.Setup(x => x.GetByIdAsync(It.IsAny<string>(), default))
-            .ReturnsAsync(new VideoCandidate("dQw4w9WgXcQ", "Some Video", TimeSpan.FromMinutes(5), 50_000, 1_000, false, "en"));
+            .ReturnsAsync(new VideoCandidate("dQw4w9WgXcQ", "Some Video", "https://example.com/thumb.jpg", TimeSpan.FromMinutes(5), 50_000, 1_000, false, "en"));
 
         var result = await CreateSut().ExecuteAsync(
             new GetVideoByUrlRequest("https://youtu.be/dQw4w9WgXcQ"));

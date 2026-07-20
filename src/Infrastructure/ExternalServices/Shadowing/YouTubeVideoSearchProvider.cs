@@ -60,6 +60,7 @@ public sealed class YouTubeVideoSearchProvider : IVideoSearchProvider
         return new VideoCandidate(
             item.Id,
             item.Snippet.Title,
+            item.Snippet.Thumbnails.Medium?.Url ?? item.Snippet.Thumbnails.Default?.Url ?? string.Empty,
             XmlConvert.ToTimeSpan(item.ContentDetails.Duration),
             ParseCount(item.Statistics.ViewCount),
             ParseCount(item.Statistics.LikeCount),
@@ -118,6 +119,24 @@ public sealed class YouTubeVideoSearchProvider : IVideoSearchProvider
 
         [JsonPropertyName("defaultLanguage")]
         public string? DefaultLanguage { get; set; }
+
+        [JsonPropertyName("thumbnails")]
+        public YouTubeVideoThumbnails Thumbnails { get; set; } = new();
+    }
+
+    private sealed class YouTubeVideoThumbnails
+    {
+        [JsonPropertyName("default")]
+        public YouTubeVideoThumbnail? Default { get; set; }
+
+        [JsonPropertyName("medium")]
+        public YouTubeVideoThumbnail? Medium { get; set; }
+    }
+
+    private sealed class YouTubeVideoThumbnail
+    {
+        [JsonPropertyName("url")]
+        public string Url { get; set; } = string.Empty;
     }
 
     private sealed class YouTubeVideoContentDetails
