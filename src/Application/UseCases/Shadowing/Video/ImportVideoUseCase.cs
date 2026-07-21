@@ -13,7 +13,7 @@ namespace Fluentra.Application.UseCases.Shadowing.Video;
 
 public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVideoResponse>
 {
-    private const string TranslationTargetLanguage = "pt";
+    private static readonly string[] TranslationTargetLanguages = ["pt", "es", "fr"];
 
     private readonly IVideoSearchProvider _videoSearchProvider;
     private readonly IVideoTranscriptProvider _transcriptProvider;
@@ -82,8 +82,11 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
 
         foreach (var segment in transcript)
         {
-            var translation = await _translationProvider.TranslateAsync(segment.Text, TranslationTargetLanguage, cancellationToken);
-            video.AddScene(segment.Text, translation, new SceneTiming(segment.Start, segment.End));
+            var translations = new string?[TranslationTargetLanguages.Length];
+            for (var i = 0; i < TranslationTargetLanguages.Length; i++)
+                translations[i] = await _translationProvider.TranslateAsync(segment.Text, TranslationTargetLanguages[i], cancellationToken);
+
+            video.AddScene(segment.Text, translations[0], translations[1], translations[2], new SceneTiming(segment.Start, segment.End));
         }
 
         var added = await _videoRepository.AddAsync(video);
@@ -101,6 +104,21 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
     private static IReadOnlyList<SceneDto> ToSceneDtos(IEnumerable<Domain.Entities.Shadowing.Scene> scenes) =>
         scenes
             .OrderBy(x => x.SequenceOrder)
-            .Select(x => new SceneDto(x.Id, x.Text, x.Translation, x.Timing.Start.TotalSeconds, x.Timing.End.TotalSeconds, x.SequenceOrder))
+            .Select(x => new SceneDto(
+                x.Id,
+                x.Text,
+                BuildTranslations(x),
+                x.Timing.Start.TotalSeconds,
+                x.Timing.End.TotalSeconds,
+                x.SequenceOrder))
             .ToList();
+
+    private static IReadOnlyDictionary<string, string> BuildTranslations(Domain.Entities.Shadowing.Scene scene)
+    {
+        var translations = new Dictionary<string, string>();
+        if (scene.TranslationPt is not null) translations["pt"] = scene.TranslationPt;
+        if (scene.TranslationEs is not null) translations["es"] = scene.TranslationEs;
+        if (scene.TranslationFr is not null) translations["fr"] = scene.TranslationFr;
+        return translations;
+    }
 }

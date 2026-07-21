@@ -6,7 +6,9 @@ public sealed class Scene
 {
     public int Id { get; private set; }
     public string Text { get; private set; } = null!;
-    public string? Translation { get; private set; }
+    public string? TranslationPt { get; private set; }
+    public string? TranslationEs { get; private set; }
+    public string? TranslationFr { get; private set; }
     public SceneTiming Timing { get; private set; } = null!;
     public int SequenceOrder { get; private set; }
 
@@ -14,10 +16,18 @@ public sealed class Scene
     {
     }
 
-    internal Scene(string text, string? translation, SceneTiming timing, int sequenceOrder)
+    internal Scene(
+        string text,
+        string? translationPt,
+        string? translationEs,
+        string? translationFr,
+        SceneTiming timing,
+        int sequenceOrder)
     {
         Text = text;
-        Translation = translation;
+        TranslationPt = translationPt;
+        TranslationEs = translationEs;
+        TranslationFr = translationFr;
         Timing = timing;
         SequenceOrder = sequenceOrder;
     }

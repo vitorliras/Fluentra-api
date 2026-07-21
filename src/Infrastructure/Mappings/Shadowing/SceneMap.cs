@@ -15,7 +15,9 @@ public sealed class SceneMap : IEntityTypeConfiguration<Scene>
         builder.Property(x => x.Text)
             .IsRequired();
 
-        builder.Property(x => x.Translation);
+        builder.Property(x => x.TranslationPt);
+        builder.Property(x => x.TranslationEs);
+        builder.Property(x => x.TranslationFr);
 
         builder.Property(x => x.SequenceOrder)
             .IsRequired();

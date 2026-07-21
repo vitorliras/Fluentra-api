@@ -39,9 +39,9 @@ public sealed class Video
         LikeCount = likeCount;
     }
 
-    public void AddScene(string text, string? translation, SceneTiming timing)
+    public void AddScene(string text, string? translationPt, string? translationEs, string? translationFr, SceneTiming timing)
     {
         var sequenceOrder = _scenes.Count + 1;
-        _scenes.Add(new Scene(text, translation, timing, sequenceOrder));
+        _scenes.Add(new Scene(text, translationPt, translationEs, translationFr, timing, sequenceOrder));
     }
 }

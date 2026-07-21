@@ -59,7 +59,7 @@ public sealed class ImportVideoUseCaseTests
         var existing = new Domain.Entities.Shadowing.Video(
             new YouTubeVideoId(VideoId), "Already Imported", "thumb.jpg",
             new VideoDuration(TimeSpan.FromMinutes(5)), 10, 1);
-        existing.AddScene("A scene.", "Uma cena.", new SceneTiming(TimeSpan.Zero, TimeSpan.FromSeconds(3)));
+        existing.AddScene("A scene.", "Uma cena.", "Una escena.", "Une scène.", new SceneTiming(TimeSpan.Zero, TimeSpan.FromSeconds(3)));
 
         _videoRepository.Setup(x => x.GetByYouTubeVideoIdAsync(VideoId)).ReturnsAsync(existing);
 
