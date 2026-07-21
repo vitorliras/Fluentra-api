@@ -15,7 +15,7 @@ public sealed class SearchVideosUseCase : IUseCase<SearchVideosRequest, SearchVi
     private const long LargeTierUpperBound = 1_000_000;
     private const int FixedSlotsPerTier = 3;
     private const int MaxResults = 15;
-    private static readonly TimeSpan DurationTolerance = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan DurationTolerance = TimeSpan.FromMinutes(5);
 
     private readonly IVideoSearchProvider _videoSearchProvider;
     private readonly IVideoTranscriptProvider _transcriptProvider;
