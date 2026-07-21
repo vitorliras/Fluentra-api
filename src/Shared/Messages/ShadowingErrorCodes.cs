@@ -9,4 +9,5 @@ public static class ShadowingErrorCodes
     public const string TranscriptUnavailable = "TranscriptUnavailable";
     public const string ImportFailed = "ImportFailed";
     public const string PersistenceError = "PersistenceError";
+    public const string NoSpeechDetected = "NoSpeechDetected";
 }
