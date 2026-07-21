@@ -40,6 +40,7 @@ public sealed class EvaluatePronunciationUseCaseTests
         result.Value!.Words.Count.ShouldBe(5);
         result.Value.Words.ShouldAllBe(w => w.Mark == "Correct");
         result.Value.AccuracyRate.ShouldBe(1.0);
+        result.Value.ShouldRepeat.ShouldBeFalse();
     }
 
     [Fact]
@@ -63,6 +64,7 @@ public sealed class EvaluatePronunciationUseCaseTests
 
         result.Value!.Words.Single().Mark.ShouldBe("Approximate");
         result.Value.AccuracyRate.ShouldBe(0.5);
+        result.Value.ShouldRepeat.ShouldBeTrue();
     }
 
     [Fact]
@@ -75,6 +77,7 @@ public sealed class EvaluatePronunciationUseCaseTests
 
         result.Value!.Words.Single().Mark.ShouldBe("Incorrect");
         result.Value.AccuracyRate.ShouldBe(0.0);
+        result.Value.ShouldRepeat.ShouldBeTrue();
     }
 
     [Fact]
@@ -91,6 +94,7 @@ public sealed class EvaluatePronunciationUseCaseTests
         missing.Mark.ShouldBe("Incorrect");
         missing.RecognizedWord.ShouldBeNull();
         result.Value.AccuracyRate.ShouldBe(0.8);
+        result.Value.ShouldRepeat.ShouldBeFalse();
     }
 
     [Fact]

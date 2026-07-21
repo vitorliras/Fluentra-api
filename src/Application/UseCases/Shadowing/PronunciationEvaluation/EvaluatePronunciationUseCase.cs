@@ -13,6 +13,7 @@ public sealed class EvaluatePronunciationUseCase : IUseCase<EvaluatePronunciatio
 
     private const double ApproximateSimilarityThreshold = 0.5;
     private const double ApproximatePartialCredit = 0.5;
+    private const double RepeatThreshold = 0.55;
 
     private static readonly char[] TrimChars = ['.', ',', '!', '?', ';', ':', '"', '\'', '(', ')'];
 
@@ -71,8 +72,10 @@ public sealed class EvaluatePronunciationUseCase : IUseCase<EvaluatePronunciatio
         }
 
         var accuracyRate = evaluations.Count == 0 ? 0.0 : creditedScore / evaluations.Count;
+        var shouldRepeat = accuracyRate < RepeatThreshold;
 
-        return Result<EvaluatePronunciationResponse>.Success(new EvaluatePronunciationResponse(evaluations, accuracyRate));
+        return Result<EvaluatePronunciationResponse>.Success(
+            new EvaluatePronunciationResponse(evaluations, accuracyRate, shouldRepeat));
     }
 
     private static List<string> SplitWords(string text) =>

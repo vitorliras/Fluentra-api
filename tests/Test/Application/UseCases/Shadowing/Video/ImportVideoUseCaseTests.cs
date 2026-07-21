@@ -65,7 +65,7 @@ public sealed class ImportVideoUseCaseTests
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.Title.ShouldBe("Already Imported");
-        result.Value.SceneCount.ShouldBe(1);
+        result.Value.Scenes.Count.ShouldBe(1);
         _quotaTracker.Verify(x => x.TryConsumeAsync(It.IsAny<int>(), default), Times.Never);
         _videoSearchProvider.Verify(x => x.GetByIdAsync(It.IsAny<string>(), default), Times.Never);
     }
@@ -142,7 +142,8 @@ public sealed class ImportVideoUseCaseTests
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.Title.ShouldBe("Some Video");
-        result.Value.SceneCount.ShouldBe(2);
+        result.Value.Scenes.Count.ShouldBe(2);
+        result.Value.Scenes[0].Text.ShouldBe("First scene.");
         _videoRepository.Verify(x => x.AddAsync(It.Is<Domain.Entities.Shadowing.Video>(
             v => v.Scenes.Count == 2 && v.Scenes.First().Text == "First scene.")), Times.Once);
     }

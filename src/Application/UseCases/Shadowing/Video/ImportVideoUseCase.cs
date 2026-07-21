@@ -53,7 +53,7 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
         var existing = await _videoRepository.GetByYouTubeVideoIdAsync(videoId.Value);
         if (existing is not null)
             return Result<ImportVideoResponse>.Success(
-                new ImportVideoResponse(existing.Id, existing.Title, existing.Scenes.Count));
+                new ImportVideoResponse(existing.Id, existing.Title, ToSceneDtos(existing.Scenes)));
 
         var consumption = await _quotaTracker.TryConsumeAsync(_settings.LookupCostUnits, cancellationToken);
         if (!consumption.Allowed)
@@ -87,6 +87,12 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
             return Result<ImportVideoResponse>.Failure(Error.From(ShadowingErrorCodes.PersistenceError));
 
         return Result<ImportVideoResponse>.Success(
-            new ImportVideoResponse(video.Id, video.Title, video.Scenes.Count));
+            new ImportVideoResponse(video.Id, video.Title, ToSceneDtos(video.Scenes)));
     }
+
+    private static IReadOnlyList<SceneDto> ToSceneDtos(IEnumerable<Domain.Entities.Shadowing.Scene> scenes) =>
+        scenes
+            .OrderBy(x => x.SequenceOrder)
+            .Select(x => new SceneDto(x.Id, x.Text, x.Timing.Start.TotalSeconds, x.Timing.End.TotalSeconds, x.SequenceOrder))
+            .ToList();
 }
