@@ -6,6 +6,4 @@ public sealed record VideoCandidate(
     string ThumbnailUrl,
     TimeSpan Duration,
     long ViewCount,
-    long LikeCount,
-    bool HasCaptions,
-    string Language);
+    long LikeCount);

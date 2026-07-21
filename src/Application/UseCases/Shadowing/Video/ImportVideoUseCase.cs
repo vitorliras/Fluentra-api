@@ -63,7 +63,8 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
         if (candidate is null)
             return Result<ImportVideoResponse>.Failure(Error.From(ShadowingErrorCodes.VideoNotFound));
 
-        if (!candidate.HasCaptions || !candidate.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+        var hasCaptions = await _transcriptProvider.HasEnglishCaptionsAsync(videoId.Value, cancellationToken);
+        if (!hasCaptions)
             return Result<ImportVideoResponse>.Failure(Error.From(ShadowingErrorCodes.VideoNotEligible));
 
         var transcript = await _transcriptProvider.GetTranscriptAsync(videoId.Value, cancellationToken);

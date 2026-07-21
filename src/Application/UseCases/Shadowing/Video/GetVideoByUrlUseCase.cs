@@ -17,15 +17,18 @@ public sealed partial class GetVideoByUrlUseCase : IUseCase<GetVideoByUrlRequest
     private const long LargeTierUpperBound = 1_000_000;
 
     private readonly IVideoSearchProvider _videoSearchProvider;
+    private readonly IVideoTranscriptProvider _transcriptProvider;
     private readonly IYouTubeQuotaTracker _quotaTracker;
     private readonly YouTubeSettings _settings;
 
     public GetVideoByUrlUseCase(
         IVideoSearchProvider videoSearchProvider,
+        IVideoTranscriptProvider transcriptProvider,
         IYouTubeQuotaTracker quotaTracker,
         IOptions<YouTubeSettings> settings)
     {
         _videoSearchProvider = videoSearchProvider;
+        _transcriptProvider = transcriptProvider;
         _quotaTracker = quotaTracker;
         _settings = settings.Value;
     }
@@ -52,7 +55,8 @@ public sealed partial class GetVideoByUrlUseCase : IUseCase<GetVideoByUrlRequest
         if (candidate is null)
             return Result<VideoSearchResultItem>.Failure(Error.From(ShadowingErrorCodes.VideoNotFound));
 
-        if (!candidate.HasCaptions || !candidate.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+        var hasCaptions = await _transcriptProvider.HasEnglishCaptionsAsync(videoId, cancellationToken);
+        if (!hasCaptions)
             return Result<VideoSearchResultItem>.Failure(Error.From(ShadowingErrorCodes.VideoNotEligible));
 
         var tier = ClassifyPopularity(candidate.ViewCount);

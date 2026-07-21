@@ -63,9 +63,7 @@ public sealed class YouTubeVideoSearchProvider : IVideoSearchProvider
             item.Snippet.Thumbnails.Medium?.Url ?? item.Snippet.Thumbnails.Default?.Url ?? string.Empty,
             XmlConvert.ToTimeSpan(item.ContentDetails.Duration),
             ParseCount(item.Statistics.ViewCount),
-            ParseCount(item.Statistics.LikeCount),
-            string.Equals(item.ContentDetails.Caption, "true", StringComparison.OrdinalIgnoreCase),
-            item.Snippet.DefaultAudioLanguage ?? item.Snippet.DefaultLanguage ?? string.Empty);
+            ParseCount(item.Statistics.LikeCount));
     }
 
     private static long ParseCount(string? value) => long.TryParse(value, out var parsed) ? parsed : 0;
@@ -114,12 +112,6 @@ public sealed class YouTubeVideoSearchProvider : IVideoSearchProvider
         [JsonPropertyName("title")]
         public string Title { get; set; } = string.Empty;
 
-        [JsonPropertyName("defaultAudioLanguage")]
-        public string? DefaultAudioLanguage { get; set; }
-
-        [JsonPropertyName("defaultLanguage")]
-        public string? DefaultLanguage { get; set; }
-
         [JsonPropertyName("thumbnails")]
         public YouTubeVideoThumbnails Thumbnails { get; set; } = new();
     }
@@ -143,9 +135,6 @@ public sealed class YouTubeVideoSearchProvider : IVideoSearchProvider
     {
         [JsonPropertyName("duration")]
         public string Duration { get; set; } = "PT0S";
-
-        [JsonPropertyName("caption")]
-        public string? Caption { get; set; }
     }
 
     private sealed class YouTubeVideoStatistics

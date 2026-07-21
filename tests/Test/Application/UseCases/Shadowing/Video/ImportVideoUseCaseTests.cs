@@ -23,12 +23,17 @@ public sealed class ImportVideoUseCaseTests
     private readonly Mock<IYouTubeQuotaTracker> _quotaTracker = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
+    public ImportVideoUseCaseTests()
+    {
+        _transcriptProvider.Setup(x => x.HasEnglishCaptionsAsync(It.IsAny<string>(), default)).ReturnsAsync(true);
+    }
+
     private ImportVideoUseCase CreateSut() => new(
         _videoSearchProvider.Object, _transcriptProvider.Object, _videoRepository.Object,
         _quotaTracker.Object, _unitOfWork.Object, Options.Create(new YouTubeSettings()));
 
-    private static VideoCandidate Candidate(bool hasCaptions = true, string language = "en") =>
-        new(VideoId, "Some Video", "https://example.com/thumb.jpg", TimeSpan.FromMinutes(5), 50_000, 1_000, hasCaptions, language);
+    private static VideoCandidate Candidate() =>
+        new(VideoId, "Some Video", "https://example.com/thumb.jpg", TimeSpan.FromMinutes(5), 50_000, 1_000);
 
     private static List<TranscriptSegment> Segments() =>
     [
@@ -98,7 +103,8 @@ public sealed class ImportVideoUseCaseTests
         _videoRepository.Setup(x => x.GetByYouTubeVideoIdAsync(VideoId)).ReturnsAsync((Domain.Entities.Shadowing.Video?)null);
         _quotaTracker.Setup(x => x.TryConsumeAsync(It.IsAny<int>(), default))
             .ReturnsAsync(new YouTubeQuotaConsumptionResult(true, false));
-        _videoSearchProvider.Setup(x => x.GetByIdAsync(VideoId, default)).ReturnsAsync(Candidate(hasCaptions: false));
+        _videoSearchProvider.Setup(x => x.GetByIdAsync(VideoId, default)).ReturnsAsync(Candidate());
+        _transcriptProvider.Setup(x => x.HasEnglishCaptionsAsync(VideoId, default)).ReturnsAsync(false);
 
         var result = await CreateSut().ExecuteAsync(new ImportVideoRequest(VideoId));
 

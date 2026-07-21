@@ -7,6 +7,12 @@ public sealed class YoutubeExplodeTranscriptProvider : IVideoTranscriptProvider
 {
     private readonly YoutubeClient _client = new();
 
+    public async Task<bool> HasEnglishCaptionsAsync(string youTubeVideoId, CancellationToken cancellationToken = default)
+    {
+        var trackManifest = await _client.Videos.ClosedCaptions.GetManifestAsync(youTubeVideoId, cancellationToken);
+        return trackManifest.TryGetByLanguage("en") is not null;
+    }
+
     public async Task<IReadOnlyList<TranscriptSegment>> GetTranscriptAsync(
         string youTubeVideoId,
         CancellationToken cancellationToken = default)

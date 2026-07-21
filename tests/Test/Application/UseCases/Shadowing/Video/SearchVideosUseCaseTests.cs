@@ -12,10 +12,16 @@ namespace Fluentra.Test.Application.UseCases.Shadowing.Video;
 public sealed class SearchVideosUseCaseTests
 {
     private readonly Mock<IVideoSearchProvider> _videoSearchProvider = new();
+    private readonly Mock<IVideoTranscriptProvider> _transcriptProvider = new();
     private readonly Mock<IYouTubeQuotaTracker> _quotaTracker = new();
 
+    public SearchVideosUseCaseTests()
+    {
+        _transcriptProvider.Setup(x => x.HasEnglishCaptionsAsync(It.IsAny<string>(), default)).ReturnsAsync(true);
+    }
+
     private SearchVideosUseCase CreateSut() =>
-        new(_videoSearchProvider.Object, _quotaTracker.Object, Options.Create(new YouTubeSettings()));
+        new(_videoSearchProvider.Object, _transcriptProvider.Object, _quotaTracker.Object, Options.Create(new YouTubeSettings()));
 
     private static SearchVideosRequest ValidRequest() => new("programação", 10);
 
@@ -23,10 +29,8 @@ public sealed class SearchVideosUseCaseTests
         string id = "abcdefghijk",
         TimeSpan? duration = null,
         long viewCount = 50_000,
-        long likeCount = 2_500,
-        bool hasCaptions = true,
-        string language = "en") =>
-        new(id, "Some Video", "https://example.com/thumb.jpg", duration ?? TimeSpan.FromMinutes(10), viewCount, likeCount, hasCaptions, language);
+        long likeCount = 2_500) =>
+        new(id, "Some Video", "https://example.com/thumb.jpg", duration ?? TimeSpan.FromMinutes(10), viewCount, likeCount);
 
     [Fact]
     public async Task Should_Return_Failure_When_Quota_Is_Exhausted()
@@ -47,7 +51,8 @@ public sealed class SearchVideosUseCaseTests
         _quotaTracker.Setup(x => x.TryConsumeAsync(It.IsAny<int>(), default))
             .ReturnsAsync(new YouTubeQuotaConsumptionResult(true, false));
         _videoSearchProvider.Setup(x => x.SearchAsync(It.IsAny<string>(), default))
-            .ReturnsAsync([Candidate(hasCaptions: false)]);
+            .ReturnsAsync([Candidate()]);
+        _transcriptProvider.Setup(x => x.HasEnglishCaptionsAsync(It.IsAny<string>(), default)).ReturnsAsync(false);
 
         var result = await CreateSut().ExecuteAsync(ValidRequest());
 

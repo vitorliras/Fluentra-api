@@ -18,15 +18,18 @@ public sealed class SearchVideosUseCase : IUseCase<SearchVideosRequest, SearchVi
     private static readonly TimeSpan DurationTolerance = TimeSpan.FromMinutes(2);
 
     private readonly IVideoSearchProvider _videoSearchProvider;
+    private readonly IVideoTranscriptProvider _transcriptProvider;
     private readonly IYouTubeQuotaTracker _quotaTracker;
     private readonly YouTubeSettings _settings;
 
     public SearchVideosUseCase(
         IVideoSearchProvider videoSearchProvider,
+        IVideoTranscriptProvider transcriptProvider,
         IYouTubeQuotaTracker quotaTracker,
         IOptions<YouTubeSettings> settings)
     {
         _videoSearchProvider = videoSearchProvider;
+        _transcriptProvider = transcriptProvider;
         _quotaTracker = quotaTracker;
         _settings = settings.Value;
     }
@@ -42,11 +45,18 @@ public sealed class SearchVideosUseCase : IUseCase<SearchVideosRequest, SearchVi
         var candidates = await _videoSearchProvider.SearchAsync(request.Subject, cancellationToken);
         var desiredDuration = TimeSpan.FromMinutes(request.DesiredDurationMinutes);
 
-        var eligible = candidates
-            .Where(c => c.HasCaptions)
-            .Where(c => c.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+        var withinScope = candidates
             .Where(c => c.ViewCount >= MinimumViewCount)
             .Where(c => IsWithinDurationTolerance(c.Duration, desiredDuration))
+            .ToList();
+
+        var captionChecks = await Task.WhenAll(withinScope.Select(async c => (
+            Candidate: c,
+            HasCaptions: await _transcriptProvider.HasEnglishCaptionsAsync(c.YouTubeVideoId, cancellationToken))));
+
+        var eligible = captionChecks
+            .Where(x => x.HasCaptions)
+            .Select(x => x.Candidate)
             .ToList();
 
         if (eligible.Count == 0)
