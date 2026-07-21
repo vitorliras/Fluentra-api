@@ -35,6 +35,11 @@ public static class DependencyInjection
         services.Configure<WhisperSettings>(configuration.GetSection("Whisper"));
         services.AddSingleton<ISpeechTranscriber, WhisperSpeechTranscriber>();
 
+        services.AddHttpClient<ITranslationProvider, LibreTranslateProvider>(client =>
+        {
+            client.BaseAddress = new Uri(configuration["LibreTranslate:BaseUrl"] ?? "http://127.0.0.1:5001/");
+        });
+
         services.Scan(scan => scan
             .FromAssemblyOf<AppDbContext>()
             .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Repository")))

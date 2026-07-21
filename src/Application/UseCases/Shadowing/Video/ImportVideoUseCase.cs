@@ -13,8 +13,11 @@ namespace Fluentra.Application.UseCases.Shadowing.Video;
 
 public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVideoResponse>
 {
+    private const string TranslationTargetLanguage = "pt";
+
     private readonly IVideoSearchProvider _videoSearchProvider;
     private readonly IVideoTranscriptProvider _transcriptProvider;
+    private readonly ITranslationProvider _translationProvider;
     private readonly IVideoRepository _videoRepository;
     private readonly IYouTubeQuotaTracker _quotaTracker;
     private readonly IUnitOfWork _unitOfWork;
@@ -23,6 +26,7 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
     public ImportVideoUseCase(
         IVideoSearchProvider videoSearchProvider,
         IVideoTranscriptProvider transcriptProvider,
+        ITranslationProvider translationProvider,
         IVideoRepository videoRepository,
         IYouTubeQuotaTracker quotaTracker,
         IUnitOfWork unitOfWork,
@@ -30,6 +34,7 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
     {
         _videoSearchProvider = videoSearchProvider;
         _transcriptProvider = transcriptProvider;
+        _translationProvider = translationProvider;
         _videoRepository = videoRepository;
         _quotaTracker = quotaTracker;
         _unitOfWork = unitOfWork;
@@ -76,7 +81,10 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
             candidate.ViewCount, candidate.LikeCount);
 
         foreach (var segment in transcript)
-            video.AddScene(segment.Text, new SceneTiming(segment.Start, segment.End));
+        {
+            var translation = await _translationProvider.TranslateAsync(segment.Text, TranslationTargetLanguage, cancellationToken);
+            video.AddScene(segment.Text, translation, new SceneTiming(segment.Start, segment.End));
+        }
 
         var added = await _videoRepository.AddAsync(video);
         if (!added)
@@ -93,6 +101,6 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
     private static IReadOnlyList<SceneDto> ToSceneDtos(IEnumerable<Domain.Entities.Shadowing.Scene> scenes) =>
         scenes
             .OrderBy(x => x.SequenceOrder)
-            .Select(x => new SceneDto(x.Id, x.Text, x.Timing.Start.TotalSeconds, x.Timing.End.TotalSeconds, x.SequenceOrder))
+            .Select(x => new SceneDto(x.Id, x.Text, x.Translation, x.Timing.Start.TotalSeconds, x.Timing.End.TotalSeconds, x.SequenceOrder))
             .ToList();
 }

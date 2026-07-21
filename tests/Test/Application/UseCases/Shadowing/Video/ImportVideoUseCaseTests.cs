@@ -19,6 +19,7 @@ public sealed class ImportVideoUseCaseTests
 
     private readonly Mock<IVideoSearchProvider> _videoSearchProvider = new();
     private readonly Mock<IVideoTranscriptProvider> _transcriptProvider = new();
+    private readonly Mock<ITranslationProvider> _translationProvider = new();
     private readonly Mock<IVideoRepository> _videoRepository = new();
     private readonly Mock<IYouTubeQuotaTracker> _quotaTracker = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
@@ -26,10 +27,11 @@ public sealed class ImportVideoUseCaseTests
     public ImportVideoUseCaseTests()
     {
         _transcriptProvider.Setup(x => x.HasEnglishCaptionsAsync(It.IsAny<string>(), default)).ReturnsAsync(true);
+        _translationProvider.Setup(x => x.TranslateAsync(It.IsAny<string>(), It.IsAny<string>(), default)).ReturnsAsync("tradução");
     }
 
     private ImportVideoUseCase CreateSut() => new(
-        _videoSearchProvider.Object, _transcriptProvider.Object, _videoRepository.Object,
+        _videoSearchProvider.Object, _transcriptProvider.Object, _translationProvider.Object, _videoRepository.Object,
         _quotaTracker.Object, _unitOfWork.Object, Options.Create(new YouTubeSettings()));
 
     private static VideoCandidate Candidate() =>
@@ -57,7 +59,7 @@ public sealed class ImportVideoUseCaseTests
         var existing = new Domain.Entities.Shadowing.Video(
             new YouTubeVideoId(VideoId), "Already Imported", "thumb.jpg",
             new VideoDuration(TimeSpan.FromMinutes(5)), 10, 1);
-        existing.AddScene("A scene.", new SceneTiming(TimeSpan.Zero, TimeSpan.FromSeconds(3)));
+        existing.AddScene("A scene.", "Uma cena.", new SceneTiming(TimeSpan.Zero, TimeSpan.FromSeconds(3)));
 
         _videoRepository.Setup(x => x.GetByYouTubeVideoIdAsync(VideoId)).ReturnsAsync(existing);
 
