@@ -52,10 +52,10 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseSerilogRequestLogging();
+app.UseCors(CorsPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRequestLocalization();
-app.UseCors(CorsPolicyName);
 app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
