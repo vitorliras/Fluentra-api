@@ -82,6 +82,6 @@ public sealed partial class GetVideoByUrlUseCase : IUseCase<GetVideoByUrlRequest
         _ => "Viral",
     };
 
-    [GeneratedRegex(@"(?:youtube\.com/watch\?v=|youtube\.com/embed/|youtu\.be/)([A-Za-z0-9_-]{11})")]
+    [GeneratedRegex(@"(?:youtube\.com/watch\?v=|youtube\.com/embed/|youtu\.be/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])")]
     private static partial Regex UrlPatternRegex();
 }

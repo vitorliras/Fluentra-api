@@ -8,13 +8,15 @@ public sealed partial class YoutubeExplodeTranscriptProvider : IVideoTranscriptP
 {
     private const int TargetWordsPerSentence = 14;
     private const int MinWordsForPunctuationFlush = 4;
+    private static readonly TimeSpan ExternalCallTimeout = TimeSpan.FromSeconds(15);
     private static readonly char[] SentenceTerminators = ['.', '!', '?'];
 
     private readonly YoutubeClient _client = new();
 
     public async Task<bool> HasEnglishCaptionsAsync(string youTubeVideoId, CancellationToken cancellationToken = default)
     {
-        var trackManifest = await _client.Videos.ClosedCaptions.GetManifestAsync(youTubeVideoId, cancellationToken);
+        var trackManifest = await WithTimeoutAsync(
+            ct => _client.Videos.ClosedCaptions.GetManifestAsync(youTubeVideoId, ct), cancellationToken);
         return trackManifest.TryGetByLanguage("en") is not null;
     }
 
@@ -22,12 +24,13 @@ public sealed partial class YoutubeExplodeTranscriptProvider : IVideoTranscriptP
         string youTubeVideoId,
         CancellationToken cancellationToken = default)
     {
-        var trackManifest = await _client.Videos.ClosedCaptions.GetManifestAsync(youTubeVideoId, cancellationToken);
+        var trackManifest = await WithTimeoutAsync(
+            ct => _client.Videos.ClosedCaptions.GetManifestAsync(youTubeVideoId, ct), cancellationToken);
         var trackInfo = trackManifest.TryGetByLanguage("en");
         if (trackInfo is null)
             return [];
 
-        var track = await _client.Videos.ClosedCaptions.GetAsync(trackInfo, cancellationToken);
+        var track = await WithTimeoutAsync(ct => _client.Videos.ClosedCaptions.GetAsync(trackInfo, ct), cancellationToken);
 
         var cleaned = track.Captions
             .Select(caption => (Text: CleanCaptionText(caption.Text), caption.Offset, caption.Duration))
@@ -35,6 +38,15 @@ public sealed partial class YoutubeExplodeTranscriptProvider : IVideoTranscriptP
             .ToList();
 
         return MergeIntoSentences(CapOverlappingEnds(cleaned));
+    }
+
+    private static async Task<T> WithTimeoutAsync<T>(
+        Func<CancellationToken, ValueTask<T>> action,
+        CancellationToken cancellationToken)
+    {
+        using var timeoutCts = new CancellationTokenSource(ExternalCallTimeout);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+        return await action(linkedCts.Token);
     }
 
     private static List<(string Text, TimeSpan Offset, TimeSpan End)> CapOverlappingEnds(

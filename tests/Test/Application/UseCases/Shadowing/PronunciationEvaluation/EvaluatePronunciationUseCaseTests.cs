@@ -1,6 +1,7 @@
 using Fluentra.Application.Abstractions;
 using Fluentra.Application.DTOs.Shadowing.PronunciationEvaluation;
 using Fluentra.Application.UseCases.Shadowing.PronunciationEvaluation;
+using Fluentra.Domain.Interfaces.Shadowing;
 using Fluentra.Shared.Messages;
 using Moq;
 using Shouldly;
@@ -10,8 +11,17 @@ namespace Fluentra.Test.Application.UseCases.Shadowing.PronunciationEvaluation;
 public sealed class EvaluatePronunciationUseCaseTests
 {
     private readonly Mock<ISpeechTranscriber> _speechTranscriber = new();
+    private readonly Mock<IScenePracticeProgressRepository> _progressRepository = new();
+    private readonly Mock<ICurrentUserService> _currentUser = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
-    private EvaluatePronunciationUseCase CreateSut() => new(_speechTranscriber.Object);
+    public EvaluatePronunciationUseCaseTests()
+    {
+        _unitOfWork.Setup(x => x.CommitAsync(default)).ReturnsAsync(true);
+    }
+
+    private EvaluatePronunciationUseCase CreateSut() =>
+        new(_speechTranscriber.Object, _progressRepository.Object, _currentUser.Object, _unitOfWork.Object);
 
     private static List<TranscribedWord> Words(params string[] texts) =>
         texts.Select((text, i) => new TranscribedWord(text, TimeSpan.FromSeconds(i), TimeSpan.FromSeconds(i + 1))).ToList();
@@ -21,7 +31,7 @@ public sealed class EvaluatePronunciationUseCaseTests
     {
         _speechTranscriber.Setup(x => x.TranscribeAsync(It.IsAny<Stream>(), default)).ReturnsAsync([]);
 
-        var result = await CreateSut().ExecuteAsync(new EvaluatePronunciationRequest(Stream.Null, "let's set up the project"));
+        var result = await CreateSut().ExecuteAsync(new EvaluatePronunciationRequest(Stream.Null, "let's set up the project", 1));
 
         result.IsSuccess.ShouldBeFalse();
         result.Error!.Code.ShouldBe(ShadowingErrorCodes.NoSpeechDetected);
@@ -34,7 +44,7 @@ public sealed class EvaluatePronunciationUseCaseTests
             .ReturnsAsync(Words("Let's", "set", "up", "the", "project"));
 
         var result = await CreateSut().ExecuteAsync(
-            new EvaluatePronunciationRequest(Stream.Null, "Let's set up the project"));
+            new EvaluatePronunciationRequest(Stream.Null, "Let's set up the project", 1));
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.Words.Count.ShouldBe(5);
@@ -49,7 +59,7 @@ public sealed class EvaluatePronunciationUseCaseTests
         _speechTranscriber.Setup(x => x.TranscribeAsync(It.IsAny<Stream>(), default))
             .ReturnsAsync(Words("scratch"));
 
-        var result = await CreateSut().ExecuteAsync(new EvaluatePronunciationRequest(Stream.Null, "scratch."));
+        var result = await CreateSut().ExecuteAsync(new EvaluatePronunciationRequest(Stream.Null, "scratch.", 1));
 
         result.Value!.Words.Single().Mark.ShouldBe("Correct");
     }
@@ -60,7 +70,7 @@ public sealed class EvaluatePronunciationUseCaseTests
         _speechTranscriber.Setup(x => x.TranscribeAsync(It.IsAny<Stream>(), default))
             .ReturnsAsync(Words("scratched"));
 
-        var result = await CreateSut().ExecuteAsync(new EvaluatePronunciationRequest(Stream.Null, "scratch"));
+        var result = await CreateSut().ExecuteAsync(new EvaluatePronunciationRequest(Stream.Null, "scratch", 1));
 
         result.Value!.Words.Single().Mark.ShouldBe("Approximate");
         result.Value.AccuracyRate.ShouldBe(0.5);
@@ -73,7 +83,7 @@ public sealed class EvaluatePronunciationUseCaseTests
         _speechTranscriber.Setup(x => x.TranscribeAsync(It.IsAny<Stream>(), default))
             .ReturnsAsync(Words("banana"));
 
-        var result = await CreateSut().ExecuteAsync(new EvaluatePronunciationRequest(Stream.Null, "scratch"));
+        var result = await CreateSut().ExecuteAsync(new EvaluatePronunciationRequest(Stream.Null, "scratch", 1));
 
         result.Value!.Words.Single().Mark.ShouldBe("Incorrect");
         result.Value.AccuracyRate.ShouldBe(0.0);
@@ -87,7 +97,7 @@ public sealed class EvaluatePronunciationUseCaseTests
             .ReturnsAsync(Words("let's", "up", "the", "project"));
 
         var result = await CreateSut().ExecuteAsync(
-            new EvaluatePronunciationRequest(Stream.Null, "let's set up the project"));
+            new EvaluatePronunciationRequest(Stream.Null, "let's set up the project", 1));
 
         result.Value!.Words.Count.ShouldBe(5);
         var missing = result.Value.Words.Single(w => w.TargetWord == "set");
@@ -104,7 +114,7 @@ public sealed class EvaluatePronunciationUseCaseTests
             .ReturnsAsync(Words("let's", "really", "set", "up", "the", "project"));
 
         var result = await CreateSut().ExecuteAsync(
-            new EvaluatePronunciationRequest(Stream.Null, "let's set up the project"));
+            new EvaluatePronunciationRequest(Stream.Null, "let's set up the project", 1));
 
         result.Value!.Words.Count.ShouldBe(5);
         result.Value.Words.ShouldAllBe(w => w.Mark == "Correct");

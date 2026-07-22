@@ -13,5 +13,8 @@ public sealed class EvaluatePronunciationRequestValidator : AbstractValidator<Ev
 
         RuleFor(x => x.AudioWav)
             .NotNull();
+
+        RuleFor(x => x.SceneId)
+            .GreaterThan(0);
     }
 }

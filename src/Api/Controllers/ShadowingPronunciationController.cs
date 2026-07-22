@@ -11,6 +11,7 @@ public sealed class EvaluatePronunciationHttpRequest
 {
     public IFormFile Audio { get; set; } = null!;
     public string TargetText { get; set; } = string.Empty;
+    public int SceneId { get; set; }
 }
 
 [Authorize]
@@ -35,7 +36,7 @@ public sealed class ShadowingPronunciationController : ControllerBase
         [FromServices] ValidationPipeline<EvaluatePronunciationRequest, EvaluatePronunciationResponse> pipeline)
     {
         await using var audioStream = httpRequest.Audio.OpenReadStream();
-        var request = new EvaluatePronunciationRequest(audioStream, httpRequest.TargetText);
+        var request = new EvaluatePronunciationRequest(audioStream, httpRequest.TargetText, httpRequest.SceneId);
 
         var result = await _executor.ExecuteAsync(request, _evaluatePronunciation, pipeline);
 

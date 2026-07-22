@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Fluentra.Application.Abstractions;
 using Fluentra.Application.Configuration;
+using Fluentra.Application.DTOs.Shadowing.PronunciationEvaluation;
 using Fluentra.Application.DTOs.Shadowing.VideoImport;
+using Fluentra.Domain.Entities.Shadowing;
 using Fluentra.Domain.Exceptions;
 using Fluentra.Domain.Interfaces.Shadowing;
 using Fluentra.Domain.ValueObjects.Shadowing;
@@ -19,6 +22,8 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
     private readonly IVideoTranscriptProvider _transcriptProvider;
     private readonly ITranslationProvider _translationProvider;
     private readonly IVideoRepository _videoRepository;
+    private readonly IScenePracticeProgressRepository _progressRepository;
+    private readonly ICurrentUserService _currentUser;
     private readonly IYouTubeQuotaTracker _quotaTracker;
     private readonly IUnitOfWork _unitOfWork;
     private readonly YouTubeSettings _settings;
@@ -28,6 +33,8 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
         IVideoTranscriptProvider transcriptProvider,
         ITranslationProvider translationProvider,
         IVideoRepository videoRepository,
+        IScenePracticeProgressRepository progressRepository,
+        ICurrentUserService currentUser,
         IYouTubeQuotaTracker quotaTracker,
         IUnitOfWork unitOfWork,
         IOptions<YouTubeSettings> settings)
@@ -36,6 +43,8 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
         _transcriptProvider = transcriptProvider;
         _translationProvider = translationProvider;
         _videoRepository = videoRepository;
+        _progressRepository = progressRepository;
+        _currentUser = currentUser;
         _quotaTracker = quotaTracker;
         _unitOfWork = unitOfWork;
         _settings = settings.Value;
@@ -57,8 +66,13 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
 
         var existing = await _videoRepository.GetByYouTubeVideoIdAsync(videoId.Value);
         if (existing is not null)
+        {
+            var sceneIds = existing.Scenes.Select(x => x.Id).ToList();
+            var progress = await _progressRepository.GetBySceneIdsAsync(_currentUser.UserId, sceneIds, cancellationToken);
+
             return Result<ImportVideoResponse>.Success(
-                new ImportVideoResponse(existing.Id, existing.Title, ToSceneDtos(existing.Scenes)));
+                new ImportVideoResponse(existing.Id, existing.Title, ToSceneDtos(existing.Scenes, progress)));
+        }
 
         var consumption = await _quotaTracker.TryConsumeAsync(_settings.LookupCostUnits, cancellationToken);
         if (!consumption.Allowed)
@@ -98,19 +112,31 @@ public sealed class ImportVideoUseCase : IUseCase<ImportVideoRequest, ImportVide
             return Result<ImportVideoResponse>.Failure(Error.From(ShadowingErrorCodes.PersistenceError));
 
         return Result<ImportVideoResponse>.Success(
-            new ImportVideoResponse(video.Id, video.Title, ToSceneDtos(video.Scenes)));
+            new ImportVideoResponse(video.Id, video.Title, ToSceneDtos(video.Scenes, new Dictionary<int, ScenePracticeProgress>())));
     }
 
-    private static IReadOnlyList<SceneDto> ToSceneDtos(IEnumerable<Domain.Entities.Shadowing.Scene> scenes) =>
+    private static IReadOnlyList<SceneDto> ToSceneDtos(
+        IEnumerable<Domain.Entities.Shadowing.Scene> scenes,
+        IReadOnlyDictionary<int, ScenePracticeProgress> progress) =>
         scenes
             .OrderBy(x => x.SequenceOrder)
-            .Select(x => new SceneDto(
-                x.Id,
-                x.Text,
-                BuildTranslations(x),
-                x.Timing.Start.TotalSeconds,
-                x.Timing.End.TotalSeconds,
-                x.SequenceOrder))
+            .Select(x =>
+            {
+                var hasProgress = progress.TryGetValue(x.Id, out var sceneProgress);
+                var lastEvaluation = hasProgress
+                    ? JsonSerializer.Deserialize<EvaluatePronunciationResponse>(sceneProgress!.EvaluationJson)
+                    : null;
+
+                return new SceneDto(
+                    x.Id,
+                    x.Text,
+                    BuildTranslations(x),
+                    x.Timing.Start.TotalSeconds,
+                    x.Timing.End.TotalSeconds,
+                    x.SequenceOrder,
+                    hasProgress && sceneProgress!.Passed,
+                    lastEvaluation);
+            })
             .ToList();
 
     private static IReadOnlyDictionary<string, string> BuildTranslations(Domain.Entities.Shadowing.Scene scene)

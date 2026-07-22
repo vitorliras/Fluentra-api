@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Fluentra.Application.Abstractions;
 using Fluentra.Application.DTOs.Shadowing.PronunciationEvaluation;
+using Fluentra.Domain.Interfaces.Shadowing;
 using Fluentra.Shared.Messages;
 using Fluentra.Shared.Results;
 
@@ -18,10 +20,20 @@ public sealed class EvaluatePronunciationUseCase : IUseCase<EvaluatePronunciatio
     private static readonly char[] TrimChars = ['.', ',', '!', '?', ';', ':', '"', '\'', '(', ')'];
 
     private readonly ISpeechTranscriber _speechTranscriber;
+    private readonly IScenePracticeProgressRepository _progressRepository;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public EvaluatePronunciationUseCase(ISpeechTranscriber speechTranscriber)
+    public EvaluatePronunciationUseCase(
+        ISpeechTranscriber speechTranscriber,
+        IScenePracticeProgressRepository progressRepository,
+        ICurrentUserService currentUser,
+        IUnitOfWork unitOfWork)
     {
         _speechTranscriber = speechTranscriber;
+        _progressRepository = progressRepository;
+        _currentUser = currentUser;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<EvaluatePronunciationResponse>> ExecuteAsync(
@@ -74,8 +86,15 @@ public sealed class EvaluatePronunciationUseCase : IUseCase<EvaluatePronunciatio
         var accuracyRate = evaluations.Count == 0 ? 0.0 : creditedScore / evaluations.Count;
         var shouldRepeat = accuracyRate < RepeatThreshold;
 
-        return Result<EvaluatePronunciationResponse>.Success(
-            new EvaluatePronunciationResponse(evaluations, accuracyRate, shouldRepeat));
+        var response = new EvaluatePronunciationResponse(evaluations, accuracyRate, shouldRepeat);
+        await _progressRepository.UpsertAsync(
+            _currentUser.UserId, request.SceneId, accuracyRate, !shouldRepeat, JsonSerializer.Serialize(response), cancellationToken);
+
+        var committed = await _unitOfWork.CommitAsync(cancellationToken);
+        if (!committed)
+            return Result<EvaluatePronunciationResponse>.Failure(Error.From(ShadowingErrorCodes.PersistenceError));
+
+        return Result<EvaluatePronunciationResponse>.Success(response);
     }
 
     private static List<string> SplitWords(string text) =>

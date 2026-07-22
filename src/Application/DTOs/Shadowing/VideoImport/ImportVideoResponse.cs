@@ -1,3 +1,5 @@
+using Fluentra.Application.DTOs.Shadowing.PronunciationEvaluation;
+
 namespace Fluentra.Application.DTOs.Shadowing.VideoImport;
 
 public sealed record ImportVideoResponse(int VideoId, string Title, IReadOnlyList<SceneDto> Scenes);
@@ -8,4 +10,6 @@ public sealed record SceneDto(
     IReadOnlyDictionary<string, string> Translations,
     double StartSeconds,
     double EndSeconds,
-    int SequenceOrder);
+    int SequenceOrder,
+    bool Completed,
+    EvaluatePronunciationResponse? LastEvaluation);

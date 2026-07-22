@@ -21,6 +21,8 @@ public sealed class ImportVideoUseCaseTests
     private readonly Mock<IVideoTranscriptProvider> _transcriptProvider = new();
     private readonly Mock<ITranslationProvider> _translationProvider = new();
     private readonly Mock<IVideoRepository> _videoRepository = new();
+    private readonly Mock<IScenePracticeProgressRepository> _progressRepository = new();
+    private readonly Mock<ICurrentUserService> _currentUser = new();
     private readonly Mock<IYouTubeQuotaTracker> _quotaTracker = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
@@ -28,11 +30,14 @@ public sealed class ImportVideoUseCaseTests
     {
         _transcriptProvider.Setup(x => x.HasEnglishCaptionsAsync(It.IsAny<string>(), default)).ReturnsAsync(true);
         _translationProvider.Setup(x => x.TranslateAsync(It.IsAny<string>(), It.IsAny<string>(), default)).ReturnsAsync("tradução");
+        _progressRepository.Setup(x => x.GetBySceneIdsAsync(It.IsAny<int>(), It.IsAny<IReadOnlyList<int>>(), default))
+            .ReturnsAsync(new Dictionary<int, ScenePracticeProgress>());
     }
 
     private ImportVideoUseCase CreateSut() => new(
         _videoSearchProvider.Object, _transcriptProvider.Object, _translationProvider.Object, _videoRepository.Object,
-        _quotaTracker.Object, _unitOfWork.Object, Options.Create(new YouTubeSettings()));
+        _progressRepository.Object, _currentUser.Object, _quotaTracker.Object, _unitOfWork.Object,
+        Options.Create(new YouTubeSettings()));
 
     private static VideoCandidate Candidate() =>
         new(VideoId, "Some Video", "https://example.com/thumb.jpg", TimeSpan.FromMinutes(5), 50_000, 1_000);

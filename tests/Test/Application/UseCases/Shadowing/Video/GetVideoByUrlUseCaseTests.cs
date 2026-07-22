@@ -52,6 +52,17 @@ public sealed class GetVideoByUrlUseCaseTests
     }
 
     [Fact]
+    public async Task Should_Reject_Url_With_Video_Id_Longer_Than_Eleven_Characters()
+    {
+        var result = await CreateSut().ExecuteAsync(
+            new GetVideoByUrlRequest("https://www.youtube.com/watch?v=MFsYaRnrcPQe"));
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error!.Code.ShouldBe(ShadowingErrorCodes.InvalidVideoUrl);
+        _videoSearchProvider.Verify(x => x.GetByIdAsync(It.IsAny<string>(), default), Times.Never);
+    }
+
+    [Fact]
     public async Task Should_Accept_Bare_Video_Id()
     {
         _quotaTracker.Setup(x => x.TryConsumeAsync(It.IsAny<int>(), default))

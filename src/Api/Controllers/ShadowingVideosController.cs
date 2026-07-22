@@ -17,17 +17,20 @@ public sealed class ShadowingVideosController : ControllerBase
     private readonly SearchVideosUseCase _searchVideos;
     private readonly GetVideoByUrlUseCase _getVideoByUrl;
     private readonly ImportVideoUseCase _importVideo;
+    private readonly GetShadowingHistoryUseCase _getHistory;
 
     public ShadowingVideosController(
         UseCaseExecutor executor,
         SearchVideosUseCase searchVideos,
         GetVideoByUrlUseCase getVideoByUrl,
-        ImportVideoUseCase importVideo)
+        ImportVideoUseCase importVideo,
+        GetShadowingHistoryUseCase getHistory)
     {
         _executor = executor;
         _searchVideos = searchVideos;
         _getVideoByUrl = getVideoByUrl;
         _importVideo = importVideo;
+        _getHistory = getHistory;
     }
 
     [HttpPost("search")]
@@ -60,6 +63,16 @@ public sealed class ShadowingVideosController : ControllerBase
         [FromServices] ValidationPipeline<ImportVideoRequest, ImportVideoResponse> pipeline)
     {
         var result = await _executor.ExecuteAsync(request, _importVideo, pipeline);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : BadRequest(result.Error);
+    }
+
+    [HttpGet("history")]
+    public async Task<IActionResult> GetHistory()
+    {
+        var result = await _executor.ExecuteAsync(_getHistory);
 
         return result.IsSuccess
             ? Ok(result.Value)
